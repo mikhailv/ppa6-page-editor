@@ -1,0 +1,94 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Peripage A6 Page Editor</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#fafafa">
+
+  <style>
+    html, body {
+      font-family: 'monospace';
+    }
+
+    label {
+      font-size: 12px;
+      user-select: none;
+    }
+
+    select {
+      background: #f8f8f8;
+      border-radius: 3px;
+      border: 1px solid lightgray;
+      padding: 3px;
+    }
+
+    input {
+      background: #f8f8f8;
+      border-radius: 3px;
+      border: 1px solid lightgray;
+      padding: 4px;
+    }
+
+    .row {
+      padding: 5px 0;
+    }
+
+    #padding-size {
+      width: 30px;
+    }
+
+    #monochrome-threshold {
+      height: 1px;
+    }
+
+    #preview-container {
+      display: flex;
+      flex-flow: row wrap;
+      gap: 10px;
+    }
+
+    #preview-container canvas {
+      border: 1px solid lightgray;
+      padding: 5px;
+      image-rendering: pixelated;
+      background-color: #eee;
+    }
+
+    #preview-container textarea {
+      border: 1px solid lightgray;
+      padding: 5px;
+      background-color: #f8f8f8;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>PeriPage A6 page editor</h1>
+
+  <div class="row">
+    <label>Font <select id="font-selector"></select></label>
+    <label>Layout <select id="layout-selector"></select></label>
+    <label>Padding <input id="padding-size" type="number" min="0" /></label>
+    <label>Debug<input id="debug-mode" type="checkbox" /></label>
+    <label>Preview<input id="preview-mode" type="checkbox" /></label>
+    <label>
+      <input id="monochrome-threshold" type="range" min="0" max="255" />
+      <span id="monochrome-threshold-value"></span>
+    </label>
+  </div>
+
+  <div id="preview-container">
+    <canvas></canvas>
+    <div>
+      <textarea spellcheck="false"></textarea>
+      <pre id="metrics"></pre>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+
+</html>
