@@ -6,9 +6,7 @@ export interface FontDefinition {
   lineHeight?: number
 }
 
-const fontByName: Record<string, FontDefinition> = {}
-
-const fontDefinitions: FontDefinition[] = [
+export const fonts: FontDefinition[] = [
   { name: 'm3x6', size: '16px', url: 'fonts/m3x6.woff2' },
   { name: 'm5x7', size: '16px', url: 'fonts/m5x7.woff2' },
   { name: 'ArkPixel Prop 10px', size: '10px', url: 'fonts/ark-pixel-10px-proportional-latin.woff2', lineHeight: 10 },
@@ -19,26 +17,15 @@ const fontDefinitions: FontDefinition[] = [
   { name: 'ArkPixel Mono 16px', size: '16px', url: 'fonts/ark-pixel-16px-monospaced-latin.woff2' },
   { name: 'BitstromWera Mono', size: '16px', url: 'fonts/BitstromWeraNerdFont-Regular.ttf' },
   { name: 'EnvyCodeR', size: '16px', url: 'fonts/EnvyCodeRNerdFont-Regular.ttf' },
-  { name: 'Iosevka-ExtraLight', size: '20px', url: 'fonts/Iosevka-ExtraLight.ttc', lineHeight: 18 },
+  { name: 'Iosevka-ExtraLight 20px', size: '20px', url: 'fonts/Iosevka-ExtraLight.ttc', lineHeight: 18 },
+  { name: 'Iosevka-ExtraLight 30px', size: '30px', url: 'fonts/Iosevka-ExtraLight.ttc', lineHeight: 28 },
 ]
 
-export async function loadFonts(): Promise<string[]> {
-  const names: string[] = []
-  for (const def of fontDefinitions) {
+export async function loadFonts(): Promise<void> {
+  for (const def of fonts) {
     const { name, url } = def
     await loadFont(name, url)
-    fontByName[name] = def
-    names.push(name)
   }
-  return names
-}
-
-export function defaultFont(): FontDefinition {
-  return fontDefinitions[0]
-}
-
-export function getFont(name: string): FontDefinition | undefined {
-  return fontByName[name]
 }
 
 async function loadFont(fontFamily: string, url: string, props: FontFaceDescriptors = {

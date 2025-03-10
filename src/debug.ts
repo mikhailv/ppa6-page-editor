@@ -1,4 +1,4 @@
-import { Rect } from './rect';
+import { Rect } from './rect'
 
 export class Debug {
   readonly enabled: boolean

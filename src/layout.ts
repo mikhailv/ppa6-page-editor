@@ -1,11 +1,21 @@
-import { Pos, Rect } from './rect';
-import { TextBlock } from './text-block';
-import { Debug } from './debug';
-import { sortBy, sortRectsByPosition } from './util';
+import { Pos, Rect } from './rect'
+import { TextBlock } from './text-block'
+import { Debug } from './debug'
+import { sortBy, sortRectsByPosition } from './util'
 
 const { min, max } = Math
 
-export function verticalBlockLayout(blocks: TextBlock[], maxWidth: number, debug: Debug): void {
+export interface BlockLayout {
+  name: string;
+  apply: (blocks: TextBlock[], maxWidth: number, debug: Debug) => void
+}
+
+export const blockLayouts: BlockLayout[] = [
+  { name: 'vertical', apply: verticalBlockLayout },
+  { name: 'compact', apply: compactBlockLayout },
+]
+
+export function verticalBlockLayout(blocks: TextBlock[]): void {
   let y = 0
   for (const { rect } of blocks) {
     rect.x = 0
