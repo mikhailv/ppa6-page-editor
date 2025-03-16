@@ -11,6 +11,7 @@ import { clamp, debounce } from '../util'
 import { Rect } from '../rect'
 import { monochromeThresholds } from '../monochrome'
 import { createProp } from '../util-prop'
+import { Printer } from '../ppa6-printer'
 
 const CANVAS_WIDTH = 384
 const CANVAS_HEIGHT = 600
@@ -20,6 +21,8 @@ export default (props: { config: Config }) => {
   const { config } = props
   let canvas!: HTMLCanvasElement
   let ctx!: CanvasRenderingContext2D
+
+  const printer = new Printer()
 
   const metrics = createProp<string[]>([])
 
@@ -38,9 +41,17 @@ export default (props: { config: Config }) => {
 
   createEffect(update)
 
+  async function connectAndPrint() {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    resizeCanvas(ctx, CANVAS_WIDTH, 1)
+    render(ctx, true, new Debug(false))
+    await printer.printImage(ctx.getImageData(0, 0, canvas.width, canvas.height))
+  }
+
   function update() {
     const debug = new Debug(config.debug && !config.preview)
-    render(ctx, debug)
+    render(ctx, config.preview, debug)
     metrics.set(debug.metrics)
     config.save()
   }
@@ -49,7 +60,7 @@ export default (props: { config: Config }) => {
     return config.monochrome.method.blockSizes?.map(size => ({ key: String(size), value: size })) ?? []
   }
 
-  function render(ctx: CanvasRenderingContext2D, debug: Debug) {
+  function render(ctx: CanvasRenderingContext2D, preview: boolean, debug: Debug) {
     const font = config.font
     const blocks = parseTextBlocks(config.text)
 
@@ -65,7 +76,7 @@ export default (props: { config: Config }) => {
     )
 
     debug.trackTime('redraw', () =>
-      draw(ctx, CANVAS_HEIGHT, blocks, debug, config.preview, ctx => {
+      draw(ctx, CANVAS_HEIGHT, blocks, debug, preview, ctx => {
         const { method, threshold, blockSize } = config.monochrome
         method.apply(ctx, threshold * (method.threshold?.step ?? 1), blockSize)
       }),
@@ -107,9 +118,12 @@ export default (props: { config: Config }) => {
           Preview
           &nbsp;
         </label>
+      </div>
+      <div class="row">
         <label>
           Monochrome
           <Select value={config.monochrome.method.name} options={monochromeThresholdOptions}
+                  disabled={!config.preview}
                   onInput={config.setMonochromeMethod}/>
           &nbsp;
         </label>
@@ -128,6 +142,7 @@ export default (props: { config: Config }) => {
           <label>
             BlockSize
             <Select value={String(config.monochrome.blockSize)} options={blockSizeOptions()}
+                    disabled={!config.preview}
                     onInput={val => config.monochrome.blockSize = Number(val)}/>
             &nbsp;
           </label>
@@ -140,6 +155,9 @@ export default (props: { config: Config }) => {
           <TextEditor value={config.text} width={CANVAS_WIDTH} height={CANVAS_HEIGHT}
                       onInput={updateText}/>
           <pre>{metrics().join('\n')}</pre>
+        </div>
+        <div>
+          <button onClick={() => connectAndPrint().catch(e => console.error(e))}>Print</button>
         </div>
       </div>
     </>

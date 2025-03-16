@@ -18,6 +18,7 @@ export const fonts: FontDefinition[] = [
   { name: 'BitstromWera Mono', size: '16px', url: 'fonts/BitstromWeraNerdFont-Regular.ttf' },
   { name: 'EnvyCodeR', size: '16px', url: 'fonts/EnvyCodeRNerdFont-Regular.ttf' },
   { name: 'Iosevka-ExtraLight 20px', size: '20px', url: 'fonts/Iosevka-ExtraLight.ttc', lineHeight: 18 },
+  { name: 'Iosevka-ExtraLight 25px', size: '25px', url: 'fonts/Iosevka-ExtraLight.ttc', lineHeight: 24 },
   { name: 'Iosevka-ExtraLight 30px', size: '30px', url: 'fonts/Iosevka-ExtraLight.ttc', lineHeight: 28 },
 ]
 

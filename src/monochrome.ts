@@ -16,11 +16,32 @@ export interface MonochromeThreshold {
 const defaultBlockSizes = [3, 5, 7, 9, 11, 13, 15]
 
 export const monochromeThresholds: MonochromeThreshold[] = [
-  { name: 'Simple', threshold: { min: 0, max: 255, step: 1, default: 140 }, apply: simpleMonochrome },
-  { name: 'Adaptive', threshold: { min: 0, max: 80, step: 1, default: 1 }, blockSizes: defaultBlockSizes, apply: adaptiveThreshold },
-  { name: 'Adaptive StdDev', threshold: { min: 0, max: 1, step: 0.05, default: 0.3 }, blockSizes: defaultBlockSizes, apply: adaptiveThresholdStdDev },
-  { name: 'Adaptive Otsu Local', blockSizes: defaultBlockSizes, apply: adaptiveThresholdOtsuLocal },
-  { name: 'Adaptive Otsu Global', apply: adaptiveThresholdOtsuGlobal },
+  {
+    name: 'Simple',
+    threshold: { min: 0, max: 255, step: 1, default: 180 },
+    apply: simpleMonochrome,
+  },
+  {
+    name: 'Adaptive',
+    threshold: { min: 0, max: 80, step: 1, default: 1 },
+    blockSizes: defaultBlockSizes,
+    apply: adaptiveThreshold,
+  },
+  {
+    name: 'Adaptive StdDev',
+    threshold: { min: 0, max: 1, step: 0.05, default: 0 },
+    blockSizes: defaultBlockSizes,
+    apply: adaptiveThresholdStdDev,
+  },
+  {
+    name: 'Adaptive Otsu Local',
+    blockSizes: defaultBlockSizes,
+    apply: adaptiveThresholdOtsuLocal,
+  },
+  {
+    name: 'Adaptive Otsu Global',
+    apply: adaptiveThresholdOtsuGlobal,
+  },
 ]
 
 function toGrayscale(r: number, g: number, b: number): number {

@@ -6,7 +6,7 @@ import { sortBy, sortRectsByPosition } from './util'
 const { min, max } = Math
 
 export interface BlockLayout {
-  name: string;
+  name: string
   apply: (blocks: TextBlock[], maxWidth: number, debug: Debug) => void
 }
 

@@ -1,7 +1,7 @@
 import { TextBlock } from './text-block'
 import { Debug } from './debug'
 
-export type ImageTransform = (ctx: CanvasRenderingContext2D) => void;
+export type ImageTransform = (ctx: CanvasRenderingContext2D) => void
 
 export function draw(
   ctx: CanvasRenderingContext2D,

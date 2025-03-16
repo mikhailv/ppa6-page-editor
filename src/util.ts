@@ -76,3 +76,7 @@ export function structDeepCopy<T extends object>(obj: T): T {
 export function isPlainObject(val: unknown): val is object {
   return val && typeof val === 'object' && (val.constructor === undefined || val.constructor === Object)
 }
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}

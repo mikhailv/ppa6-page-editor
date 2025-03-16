@@ -10,5 +10,5 @@ import { loadFonts } from './fonts'
   const config = createConfig()
   config.load()
 
-  render(() => <App config={config} />, document.getElementById('root')!)
+  render(() => <App config={config}/>, document.getElementById('root')!)
 })()

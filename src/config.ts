@@ -81,7 +81,6 @@ export function createConfig(): Config {
 function loadConfig(store: ConfigStore, key: string) {
   try {
     const save = (JSON.parse(localStorage.getItem(key)) ?? {}) as ConfigSaveState
-    //modifyMutable(store, produce(state => Object.assign(state, fromSaveState(save))))
     Object.assign(store, fromSaveState(save))
   } catch (e) {
     console.error(`failed to load state: ${e}`)
