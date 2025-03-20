@@ -5,7 +5,7 @@ import eslintPlugin from 'vite-plugin-eslint'
 export default defineConfig({
   plugins: [solidPlugin(), eslintPlugin()],
   server: {
-    port: 8080,
+    port: 8099,
   },
   build: {
     target: 'esnext',

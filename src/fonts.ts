@@ -33,7 +33,6 @@ async function loadFont(fontFamily: string, url: string, props: FontFaceDescript
   style: 'normal',
   weight: '400',
 }) {
-  //const font = new FontFace(`'${fontFamily}'`, `url(${url})`, props)
   const font = new FontFace(fontFamily, `url(${url})`, props)
   await font.load()
   document.fonts.add(font)

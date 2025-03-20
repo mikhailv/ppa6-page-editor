@@ -7,8 +7,9 @@ export default function <T> (props: {
   disabled?: boolean,
   options?: Option<T>[],
   onInput?: (value: T) => void,
+  id?: string,
 }) {
-  return <select onInput={e => props.onInput?.(props.options?.find(it => it.key === e.currentTarget.value).value)} disabled={props.disabled}>
+  return <select class="form-select" id={props.id} onInput={e => props.onInput?.(props.options?.find(it => it.key === e.currentTarget.value).value)} disabled={props.disabled}>
     <Index each={props.options}>
       {item => <option value={item().key} selected={item().key === props.value}>{item().label ?? item().key}</option>}
     </Index>

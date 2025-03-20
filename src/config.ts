@@ -5,16 +5,16 @@ import { MonochromeThreshold, monochromeThresholds } from './monochrome'
 import { findByNameOrFirst, structDeepCopy } from './util'
 
 const defaultConfigSaveState: ConfigSaveState = {
-  font: 'ArkPixel Prop 12px',
+  font: 'Iosevka-ExtraLight 20px',
   text: '',
-  padding: [3, 3],
+  padding: [6, 3],
   layout: 'compact',
   debug: false,
   preview: false,
   monochrome: {
-    method: 'Simple',
-    threshold: 1,
-    blockSize: 3,
+    method: 'Adaptive StdDev',
+    threshold: 0,
+    blockSize: 15,
   },
 }
 
@@ -81,7 +81,9 @@ export function createConfig(): Config {
 function loadConfig(store: ConfigStore, key: string) {
   try {
     const save = (JSON.parse(localStorage.getItem(key)) ?? {}) as ConfigSaveState
-    Object.assign(store, fromSaveState(save))
+    if (save) {
+      Object.assign(store, fromSaveState(save))
+    }
   } catch (e) {
     console.error(`failed to load state: ${e}`)
   }

@@ -25,6 +25,10 @@ export function draw(
   ctx.fillStyle = 'white'
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
+  if (ctx.canvas.height === 0) {
+    return
+  }
+
   debug.trackTime('draw_text', () => {
     ctx.textBaseline = 'top'
     ctx.fillStyle = 'black'

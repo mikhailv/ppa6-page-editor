@@ -23,7 +23,7 @@ export const monochromeThresholds: MonochromeThreshold[] = [
   },
   {
     name: 'Adaptive',
-    threshold: { min: 0, max: 80, step: 1, default: 1 },
+    threshold: { min: 1, max: 80, step: 1, default: 1 },
     blockSizes: defaultBlockSizes,
     apply: adaptiveThreshold,
   },

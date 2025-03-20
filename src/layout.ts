@@ -26,7 +26,7 @@ export function verticalBlockLayout(blocks: TextBlock[]): void {
 
 export function compactBlockLayout(blocks: TextBlock[], maxWidth: number, debug: Debug): void {
   let y = 0
-  const freeRects: Rect[] = [new Rect(0, 0, maxWidth, 10_000)]
+  const freeRects: Rect[] = [new Rect(0, 0, maxWidth, 100_000)]
   const allocRects: Rect[] = []
   sortBy(blocks, x => -x.rect.width * x.rect.height)
   for (const { rect } of blocks) {
