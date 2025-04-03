@@ -2,13 +2,14 @@ import { createMutable } from 'solid-js/store'
 import { FontDefinition, fonts } from './fonts'
 import { BlockLayout, blockLayouts } from './layout'
 import { MonochromeThreshold, monochromeThresholds } from './monochrome'
-import { findByNameOrFirst, structDeepCopy } from './util'
+import { deleteUndefined, findByNameOrFirst, structDeepCopy } from './util'
 
 const defaultConfigSaveState: ConfigSaveState = {
   font: 'Iosevka-ExtraLight 20px',
   text: '',
   padding: [6, 3],
   layout: 'compact',
+  borders: true,
   debug: false,
   preview: false,
   monochrome: {
@@ -25,6 +26,7 @@ interface ConfigStore {
   text: string
   padding: { h: number, v: number }
   layout: BlockLayout
+  borders: boolean
   debug: boolean
   preview: boolean
   monochrome: {
@@ -80,7 +82,7 @@ export function createConfig(): Config {
 
 function loadConfig(store: ConfigStore, key: string) {
   try {
-    const save = (JSON.parse(localStorage.getItem(key)) ?? {}) as ConfigSaveState
+    const save = JSON.parse(localStorage.getItem(key) ?? '{}') as ConfigSaveState
     if (save) {
       Object.assign(store, fromSaveState(save))
     }
@@ -98,6 +100,7 @@ interface ConfigSaveState {
   text?: string
   padding?: [number, number]
   layout?: string
+  borders?: boolean
   debug?: boolean
   preview?: boolean
   monochrome?: {
@@ -108,19 +111,20 @@ interface ConfigSaveState {
 }
 
 function fromSaveState(save: ConfigSaveState): ConfigStore {
-  return structDeepCopy({
+  return deleteUndefined(structDeepCopy({
     font: findByNameOrFirst(fonts, save.font ?? ''),
     text: save.text ?? '',
-    padding: { h: save.padding[0], v: save.padding[1] },
+    padding: { h: save.padding?.[0], v: save.padding?.[1] },
     layout: findByNameOrFirst(blockLayouts, save.layout),
+    borders: save.borders ?? false,
     debug: save.debug ?? false,
     preview: save.preview ?? false,
     monochrome: {
-      method: findByNameOrFirst(monochromeThresholds, save.monochrome.method),
-      threshold: save.monochrome.threshold ?? 0,
-      blockSize: save.monochrome.blockSize ?? 1,
+      method: findByNameOrFirst(monochromeThresholds, save.monochrome?.method ?? ''),
+      threshold: save.monochrome?.threshold ?? 0,
+      blockSize: save.monochrome?.blockSize ?? 1,
     },
-  })
+  }))
 }
 
 function toSaveState(cfg: ConfigStore): ConfigSaveState {

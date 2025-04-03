@@ -80,3 +80,26 @@ export function isPlainObject(val: unknown): val is object {
 export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
+
+export function deleteUndefined<T extends object>(obj: T): T | undefined {
+  if (!isPlainObject(obj)) {
+    return obj
+  }
+  return mapObject(obj)
+
+  function mapObject<T extends object>(obj: T): T | undefined {
+    const keys = Object.keys(obj)
+    for (const key of keys) {
+      if (isPlainObject(obj[key])) {
+        obj[key] = mapObject(obj[key])
+      }
+      if (obj[key] === undefined) {
+        delete obj[key]
+      }
+    }
+    if (Object.keys(obj).length === 0 && keys.length > 0) {
+      return undefined
+    }
+    return obj
+  }
+}

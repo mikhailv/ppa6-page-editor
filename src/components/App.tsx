@@ -21,6 +21,7 @@ const DEBUG = new URLSearchParams(location.search).has('debug')
 
 export default (props: { config: Config }) => {
   const { config } = props
+
   let canvas!: HTMLCanvasElement
   let ctx!: CanvasRenderingContext2D
 
@@ -53,13 +54,13 @@ export default (props: { config: Config }) => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     resizeCanvas(ctx, CANVAS_WIDTH, 1)
-    render(ctx, true, new Debug(false))
+    render(ctx, config.borders, true, new Debug(false))
     await printer.printImage(ctx.getImageData(0, 0, canvas.width, canvas.height))
   }
 
   function update() {
     const debug = new Debug(config.debug && !config.preview)
-    render(ctx, config.preview, debug)
+    render(ctx, config.borders, config.preview, debug)
     metrics.set(debug.metrics)
     config.save()
   }
@@ -68,12 +69,12 @@ export default (props: { config: Config }) => {
     return config.monochrome.method.blockSizes?.map(size => ({ key: String(size), value: size })) ?? []
   }
 
-  function render(ctx: CanvasRenderingContext2D, preview: boolean, debug: Debug) {
+  function render(ctx: CanvasRenderingContext2D, borders: boolean, preview: boolean, debug: Debug) {
     const font = config.font
     const blocks = parseTextBlocks(config.text)
 
     debug.trackTime('measure_text', () => {
-      ctx.font = `${font.size} '${font.name}'` // needed to measure blocks
+      ctx.font = `${font.size} '${font.family}'` // font need to be configured to measure blocks
       for (const block of blocks) {
         measureBlock(ctx, block, font, config.padding.h, config.padding.v)
       }
@@ -84,7 +85,7 @@ export default (props: { config: Config }) => {
     )
 
     debug.trackTime('redraw', () =>
-      draw(ctx, CANVAS_HEIGHT, blocks, debug, preview, ctx => {
+      draw(ctx, CANVAS_HEIGHT, blocks, debug, borders, preview, ctx => {
         const { method, blockSize } = config.monochrome
         method.apply(ctx, config.thresholdValue, blockSize)
       }),
@@ -126,6 +127,14 @@ export default (props: { config: Config }) => {
             </div>
           </div>
           <div class="w-100"></div>
+          <div class="col-auto">
+            <div class="form-check form-check-sm">
+              <input id="borders-checkbox" type="checkbox" class="form-check-input"
+                     checked={config.borders}
+                     onInput={e => config.borders = e.currentTarget.checked}/>
+              <label for="borders-checkbox" class="form-check-label font-sm">Borders</label>
+            </div>
+          </div>
           <div class="col-auto">
             <div class="form-check form-check-sm">
               <input id="preview-checkbox" type="checkbox" class="form-check-input"
@@ -189,10 +198,10 @@ export default (props: { config: Config }) => {
         <div class="col-auto">
           <canvas ref={canvas}/>
         </div>
-        <div class="col-auto order-lg-last">
+        <div class="col-auto">
           <button type="button" class="btn btn-sm btn-outline-primary" onClick={() => connectAndPrint().catch(e => console.error(e))}>Print</button>
         </div>
-        <div class="col-auto">
+        <div class="col-auto order-lg-first">
           <TextEditor value={config.text} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onInput={updateText}/>
           <div class="metrics-output">{metrics().join('\n')}</div>
         </div>
@@ -254,16 +263,16 @@ function measureBlock(
   let height = 0
   for (const line of block.lines) {
     const m = ctx.measureText(line)
-    //console.log(line, m)
-    const lineWidth = Math.round(m.width)
-    const lineHeight = font.lineHeight ?? Math.round(m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)
+    const lineWidth = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight)
+    const lineHeight = font.lineHeight ?? Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)
+    block.lineOffsets.push({ x: m.actualBoundingBoxLeft, y: m.actualBoundingBoxAscent })
     block.lineRects.push(new Rect(x, y, lineWidth, lineHeight))
     width = Math.max(width, lineWidth)
     height += lineHeight
     y += lineHeight
   }
   block.rect.width = width + 2 * horizontalPadding + 1
-  block.rect.height = height + 2 * verticalPadding
+  block.rect.height = height + 2 * verticalPadding + 1
 }
 
 function makeOptions<T extends { name: string }>(items: T[]): Option<T>[] {

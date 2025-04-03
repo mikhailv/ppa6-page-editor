@@ -8,6 +8,7 @@ export function draw(
   defaultHeight: number,
   blocks: TextBlock[],
   debug: Debug,
+  borders: boolean,
   preview: boolean,
   monochromeTransform: ImageTransform,
 ) {
@@ -35,26 +36,31 @@ export function draw(
     for (const block of blocks) {
       const r = block.rect
       block.lines.forEach((line, j) => {
+        const lineOffset = block.lineOffsets[j]
         const lineRect = block.lineRects[j]
         const boldX = block.format.bold ? 0.5 : 0
+        const x = r.x + lineOffset.x + boldX
+        const y = r.y + lineOffset.y + lineRect.y
         if (block.format.center) {
-          ctx.fillText(line, r.x + Math.floor((block.rect.width - lineRect.width) / 2) + boldX, r.y + lineRect.y)
+          ctx.fillText(line, x + Math.floor((block.rect.width - lineRect.width) / 2), y)
         } else {
-          ctx.fillText(line, r.x + lineRect.x + boldX, r.y + lineRect.y)
+          ctx.fillText(line, x + lineRect.x, y)
         }
       })
     }
   })
 
-  debug.trackTime('draw_borders', () => {
-    ctx.fillStyle = 'black'
-    ctx.strokeStyle = 'black'
-    ctx.setLineDash([1, 7])
-    for (const block of blocks) {
-      const r = block.rect
-      ctx.strokeRect(r.x - 0.5, r.y - 0.5, r.width, r.height)
-    }
-  })
+  if (borders) {
+    debug.trackTime('draw_borders', () => {
+      ctx.fillStyle = 'black'
+      ctx.strokeStyle = 'black'
+      ctx.setLineDash([1, 7])
+      for (const block of blocks) {
+        const r = block.rect
+        ctx.strokeRect(r.x - 0.5, r.y - 0.5, r.width, r.height)
+      }
+    })
+  }
 
   if (debug.enabled) {
     ctx.strokeStyle = 'red'
