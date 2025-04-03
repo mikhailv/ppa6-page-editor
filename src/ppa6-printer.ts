@@ -13,20 +13,24 @@ export type ConcentrationLevel = 0 | 1 | 2
 
 export class Printer {
   private _port?: SerialPort
-  private _info?: PrinterInfo
 
   get connected(): boolean {
     return this._port?.connected ?? false
-  }
-
-  get info(): PrinterInfo | null {
-    return this.connected && this._info ? this._info : null
   }
 
   async printImage(img: ImageData, concentration: ConcentrationLevel = 2): Promise<void> {
     await this.connect()
     await this.setConcentration(concentration)
     await this.printRows(convertToMonochromeBinary(img))
+    await this._port.close()
+  }
+
+  async getInfo(): Promise<PrinterInfo> {
+    return {
+      name: await this.getDeviceName(),
+      serialNumber: await this.getDeviceSerialNumber(),
+      firmware: await this.getDeviceFirmware(),
+    }
   }
 
   private async connect() {
@@ -37,14 +41,9 @@ export class Printer {
   private async requestPort(): Promise<SerialPort> {
     let port = this._port
     if (port && port.connected) {
-      return
+      return port
     }
-    port = (await navigator.serial.getPorts()).find(port => port.connected)
-    if (!port) {
-      port = await navigator.serial.requestPort({ filters: [{ bluetoothServiceClassId: serialPortServiceUUID }] })
-    }
-    this._info = undefined
-    this._port = port
+    port = this._port = await navigator.serial.requestPort({ filters: [{ bluetoothServiceClassId: serialPortServiceUUID }] })
     return port
   }
 
@@ -52,22 +51,23 @@ export class Printer {
     try {
       await port.open({ baudRate })
     } catch (e) {
-      if (!e.message.substring('is already open')) {
+      if (!e.message.includes('is already open')) {
         throw e
       }
     }
     if (!port.readable || !port.writable || port.readable.locked || port.writable.locked) {
       // try to recover port state by reconnecting
-      await port.close()
+      try {
+        await port.close()
+      } catch (e) {
+        if (!e.message.includes('port is already closed')) {
+          throw e
+        }
+      }
       await port.open({ baudRate })
     }
-    await this.reset()
 
-    this._info = this._info ?? {
-      name: await this.getDeviceName(),
-      serialNumber: await this.getDeviceSerialNumber(),
-      firmware: await this.getDeviceFirmware(),
-    }
+    await this.reset()
   }
 
   private async reset(): Promise<void> {

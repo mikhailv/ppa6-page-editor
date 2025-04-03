@@ -25,4 +25,6 @@ declare interface SerialPort {
   }): Promise<void>
 
   close(): Promise<void>
+
+  forget(): Promise<void>
 }
