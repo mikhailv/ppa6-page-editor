@@ -38,10 +38,6 @@ export function findByName<T extends { name: string }>(items: T[], name: string,
   return items.find(item => item.name === name) ?? def
 }
 
-export function findByNameOrFirst<T extends { name: string }>(items: T[], name: string): T | undefined {
-  return findByName(items, name, items[0])
-}
-
 export function overrideProps<T extends object>(obj: T) {
   return produce<T>(draft => {
     Object.assign(draft, obj)

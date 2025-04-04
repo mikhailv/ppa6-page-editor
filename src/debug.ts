@@ -3,21 +3,20 @@ import { Rect } from './rect'
 export class Debug {
   readonly enabled: boolean
   readonly rects: Rect[] = []
-  readonly metrics: string[] = []
+  private readonly _metrics: Record<string, number> = {}
 
   constructor(enabled: boolean) {
     this.enabled = enabled
   }
 
-  reset() {
-    this.rects.length = 0
-    this.metrics.length = 0
+  get metrics(): string[] {
+    return Object.entries(this._metrics).map(([name, time]) => `${name}: ${time} ms.`)
   }
 
-  trackTime(message: string, fn: () => void): void {
+  trackTime(name: string, fn: () => void): void {
     const st = Date.now()
     fn()
-    this.metrics.push(`${message}: ${Date.now() - st} ms.`)
+    this._metrics[name] = (this._metrics[name] ?? 0) + Date.now() - st
   }
 }
 

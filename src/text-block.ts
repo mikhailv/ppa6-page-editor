@@ -2,7 +2,7 @@ import { Pos, Rect } from './rect'
 
 export interface TextBlockFormat {
   center?: true
-  bold?: true
+  shift?: true
 }
 
 export class TextBlock {

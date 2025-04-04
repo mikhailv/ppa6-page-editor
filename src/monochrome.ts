@@ -48,7 +48,7 @@ function toGrayscale(r: number, g: number, b: number): number {
   return 0.299 * r + 0.587 * g + 0.114 * b
 }
 
-function simpleMonochrome(ctx: CanvasRenderingContext2D, threshold: number) {
+export function simpleMonochrome(ctx: CanvasRenderingContext2D, threshold: number) {
   const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height)
   const data = imageData.data
   for (let i = 0; i < data.length; i += 4) {

@@ -2,10 +2,11 @@ import { createMutable } from 'solid-js/store'
 import { FontDefinition, fonts } from './fonts'
 import { BlockLayout, blockLayouts } from './layout'
 import { MonochromeThreshold, monochromeThresholds } from './monochrome'
-import { deleteUndefined, findByNameOrFirst, structDeepCopy } from './util'
+import { deleteUndefined, findByName, structDeepCopy } from './util'
 
 const defaultConfigSaveState: ConfigSaveState = {
-  font: 'Iosevka-ExtraLight 20px',
+  font: 'Iosevka-Regular',
+  fontSize: 25,
   text: '',
   padding: [6, 3],
   layout: 'compact',
@@ -23,6 +24,7 @@ const defaultLocalStorageStateKey = 'pp6_state'
 
 interface ConfigStore {
   font: FontDefinition
+  fontSize: number
   text: string
   padding: { h: number, v: number }
   layout: BlockLayout
@@ -97,6 +99,7 @@ function saveConfig(store: ConfigStore, key: string) {
 
 interface ConfigSaveState {
   font?: string
+  fontSize?: number
   text?: string
   padding?: [number, number]
   layout?: string
@@ -112,17 +115,21 @@ interface ConfigSaveState {
 
 function fromSaveState(save: ConfigSaveState): ConfigStore {
   return deleteUndefined(structDeepCopy({
-    font: findByNameOrFirst(fonts, save.font ?? ''),
-    text: save.text ?? '',
-    padding: { h: save.padding?.[0], v: save.padding?.[1] },
-    layout: findByNameOrFirst(blockLayouts, save.layout),
-    borders: save.borders ?? false,
-    debug: save.debug ?? false,
-    preview: save.preview ?? false,
+    font: findByName(fonts, save.font ?? ''),
+    fontSize: save.fontSize,
+    text: save.text,
+    padding: {
+      h: save.padding?.[0],
+      v: save.padding?.[1],
+    },
+    layout: findByName(blockLayouts, save.layout ?? ''),
+    borders: save.borders,
+    debug: save.debug,
+    preview: save.preview,
     monochrome: {
-      method: findByNameOrFirst(monochromeThresholds, save.monochrome?.method ?? ''),
-      threshold: save.monochrome?.threshold ?? 0,
-      blockSize: save.monochrome?.blockSize ?? 1,
+      method: findByName(monochromeThresholds, save.monochrome?.method ?? ''),
+      threshold: save.monochrome?.threshold,
+      blockSize: save.monochrome?.blockSize,
     },
   }))
 }

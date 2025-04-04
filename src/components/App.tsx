@@ -74,7 +74,8 @@ export default (props: { config: Config }) => {
     const blocks = parseTextBlocks(config.text)
 
     debug.trackTime('measure_text', () => {
-      ctx.font = `${font.size} '${font.family}'` // font need to be configured to measure blocks
+      ctx.font = `${font.size ?? config.fontSize}px '${font.family}'` // font need to be configured to measure blocks
+      ctx.textBaseline = 'top'
       for (const block of blocks) {
         measureBlock(ctx, block, font, config.padding.h, config.padding.v)
       }
@@ -105,6 +106,10 @@ export default (props: { config: Config }) => {
               <label for="font-selector" class="input-group-text">Font</label>
               <Select id="font-selector" value={config.font.name} options={fontOptions}
                       onInput={config.setFont}/>
+              <input id="font-size-input" class="form-control" type="number" min="1" max="100"
+                     disabled={config.font.size != null}
+                     value={config.font.size ?? config.fontSize}
+                     onInput={e => config.fontSize = Number(e.currentTarget.value)}/>
             </div>
           </div>
           <div class="col-auto mb-1">
@@ -117,11 +122,11 @@ export default (props: { config: Config }) => {
           <div class="col-auto mb-1">
             <div class="input-group input-group-sm">
               <label for="padding-h-input" class="input-group-text">Padding h:</label>
-              <input id="padding-h-input" class="padding-size form-control" type="number" min="0"
+              <input id="padding-h-input" class="form-control" type="number" min="0" max="100"
                      value={config.padding.h}
                      onInput={e => config.padding.h = Number(e.currentTarget.value)}/>
               <label for="padding-v-input" class="input-group-text">v:</label>
-              <input id="padding-v-input" class="padding-size form-control" type="number" min="0"
+              <input id="padding-v-input" class="form-control" type="number" min="0" max="100"
                      value={config.padding.v}
                      onInput={e => config.padding.v = Number(e.currentTarget.value)}/>
             </div>
@@ -240,8 +245,8 @@ function parseTextBlocks(text: string): TextBlock[] {
         res.repeat = clamp(1, 100, parseInt(arg.slice(1), 10))
       } else if ('center' === arg) {
         res.center = true
-      } else if ('bold' === arg) {
-        res.bold = true
+      } else if ('shift' === arg) {
+        res.shift = true
       } else {
         console.error(`unknown TextBlock annotation property: '${arg}'`)
       }
@@ -257,19 +262,19 @@ function measureBlock(
   horizontalPadding: number,
   verticalPadding: number,
 ): void {
-  const x = horizontalPadding
-  let y = verticalPadding
   let width = 0
   let height = 0
-  for (const line of block.lines) {
+  for (const [i, line] of block.lines.entries()) {
     const m = ctx.measureText(line)
+    if (i > 0 && !font.lineHeight) {
+      height += Math.round(m.fontBoundingBoxDescent / 4)
+    }
     const lineWidth = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight)
     const lineHeight = font.lineHeight ?? Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)
     block.lineOffsets.push({ x: m.actualBoundingBoxLeft, y: m.actualBoundingBoxAscent })
-    block.lineRects.push(new Rect(x, y, lineWidth, lineHeight))
+    block.lineRects.push(new Rect(horizontalPadding, verticalPadding + height, lineWidth, lineHeight))
     width = Math.max(width, lineWidth)
     height += lineHeight
-    y += lineHeight
   }
   block.rect.width = width + 2 * horizontalPadding + 1
   block.rect.height = height + 2 * verticalPadding + 1

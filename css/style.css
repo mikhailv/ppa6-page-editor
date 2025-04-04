@@ -10,6 +10,10 @@ label {
   max-width: 50px;
 }
 
+#font-size-input {
+  max-width: 60px;
+}
+
 .font-sm {
   font-size: 0.875rem;
 }
