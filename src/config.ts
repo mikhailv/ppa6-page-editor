@@ -9,6 +9,7 @@ const defaultConfigSaveState: ConfigSaveState = {
   fontSize: 25,
   text: '',
   padding: [6, 3],
+  fixedWidth: false,
   layout: 'compact',
   borders: true,
   debug: false,
@@ -27,6 +28,7 @@ interface ConfigStore {
   fontSize: number
   text: string
   padding: { h: number, v: number }
+  fixedWidth: boolean
   layout: BlockLayout
   borders: boolean
   debug: boolean
@@ -106,6 +108,7 @@ interface ConfigSaveState {
   fontSize?: number
   text?: string
   padding?: [number, number]
+  fixedWidth?: boolean
   layout?: string
   borders?: boolean
   debug?: boolean
@@ -126,6 +129,7 @@ function fromSaveState(save: ConfigSaveState): ConfigStore {
       h: save.padding?.[0],
       v: save.padding?.[1],
     },
+    fixedWidth: save.fixedWidth,
     layout: findByName(blockLayouts, save.layout ?? ''),
     borders: save.borders,
     debug: save.debug,

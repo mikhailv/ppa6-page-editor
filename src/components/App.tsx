@@ -77,6 +77,10 @@ export default (props: { config: Config }) => {
       for (const block of blocks) {
         measureBlock(fontCtx, block, config.padding.h, config.padding.v)
       }
+      if (config.fixedWidth) {
+        const maxWidth = Math.max(...blocks.map(b => b.rect.width))
+        blocks.forEach(block => block.setWidth(maxWidth))
+      }
     })
 
     debug.trackTime('layout', () =>
@@ -130,6 +134,14 @@ export default (props: { config: Config }) => {
             </div>
           </div>
           <div class="w-100"></div>
+          <div class="col-auto">
+            <div class="form-check form-check-sm">
+              <input id="fixed-width-checkbox" type="checkbox" class="form-check-input"
+                     checked={config.fixedWidth}
+                     onInput={e => config.fixedWidth = e.currentTarget.checked}/>
+              <label for="fixed-width-checkbox" class="form-check-label font-sm">Fixed width</label>
+            </div>
+          </div>
           <div class="col-auto">
             <div class="form-check form-check-sm">
               <input id="borders-checkbox" type="checkbox" class="form-check-input"

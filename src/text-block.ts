@@ -34,6 +34,13 @@ export class TextBlock {
   copy(): TextBlock {
     return new TextBlock(this.lines.map(v => v.copy()), this.rect.copy(), this.innerRect.copy())
   }
+
+  setWidth(width: number) {
+    const dx = Math.floor((width - this.rect.width) / 2)
+    this.lines.forEach(line => line.rect.x += dx)
+    this.innerRect.x += dx
+    this.rect.width = width
+  }
 }
 
 function parseTextFormat(line: string): TextFormat {
