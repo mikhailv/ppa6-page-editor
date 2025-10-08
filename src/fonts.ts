@@ -32,15 +32,9 @@ function getFontUrl(name: string): string {
 }
 
 export async function loadFonts(): Promise<void> {
-  const families: Record<string, string> = {}
   for (const def of fonts) {
-    families[def.url] = def.url.replace(/\/([-\w]+?)\.\w+$/, '$1')
-  }
-  for (const [url, family] of Object.entries(families)) {
-    await loadFont(family, url)
-  }
-  for (const def of fonts) {
-    def.family = families[def.url]
+    def.family = def.name.replace(/\s+/g, '-')
+    await loadFont(def.family, def.url)
   }
 }
 
