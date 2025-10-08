@@ -8,7 +8,11 @@ import { loadFonts } from './fonts'
   await loadFonts()
 
   const config = createConfig()
-  config.load()
+  if (location.hash !== '' && location.hash !== '#') {
+    config.decode(location.hash.substring(1))
+  } else {
+    config.load()
+  }
 
   render(() => <App config={config}/>, document.getElementById('root')!)
 })()

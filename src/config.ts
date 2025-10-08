@@ -41,6 +41,8 @@ interface ConfigStore {
 export interface Config extends ConfigStore {
   load(): void
   save(): void
+  encode(): string;
+  decode(s: string): void;
   setFont(font: FontDefinition): void
   setLayout(layout: BlockLayout): void
   setMonochromeMethod(method: MonochromeThreshold): void
@@ -53,10 +55,16 @@ export function createConfig(): Config {
   const config = createMutable<Config>({
     ...fromSaveState(defaultConfigSaveState),
     load() {
-      loadConfig(config, key)
+      loadConfigFromJson(config, localStorage.getItem(key) ?? '{}')
     },
     save() {
-      saveConfig(config, key)
+      localStorage.setItem(key, JSON.stringify(toSaveState(config)))
+    },
+    encode(): string {
+      return btoa(JSON.stringify(toSaveState(config)))
+    },
+    decode(s: string) {
+      loadConfigFromJson(config, atob(s))
     },
     setFont(font) {
       config.font = structDeepCopy(font)
@@ -82,19 +90,15 @@ export function createConfig(): Config {
   return config
 }
 
-function loadConfig(store: ConfigStore, key: string) {
+function loadConfigFromJson(store: ConfigStore, json: string) {
   try {
-    const save = JSON.parse(localStorage.getItem(key) ?? '{}') as ConfigSaveState
+    const save = JSON.parse(json) as ConfigSaveState
     if (save) {
       Object.assign(store, fromSaveState(save))
     }
   } catch (e) {
     console.error(`failed to load state: ${e}`)
   }
-}
-
-function saveConfig(store: ConfigStore, key: string) {
-  localStorage.setItem(key, JSON.stringify(toSaveState(store)))
 }
 
 interface ConfigSaveState {

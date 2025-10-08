@@ -12,6 +12,7 @@ export interface BlockLayout {
 
 export const blockLayouts: BlockLayout[] = [
   { name: 'vertical', apply: verticalBlockLayout },
+  { name: 'two-columns', apply: twoColumnsBlockLayout },
   { name: 'compact', apply: compactBlockLayout },
 ]
 
@@ -24,24 +25,47 @@ export function verticalBlockLayout(blocks: TextBlock[]): void {
   }
 }
 
+export function twoColumnsBlockLayout(blocks: TextBlock[], maxWidth: number, debug: Debug): void {
+  freeRectLayout(blocks, maxWidth, debug, (rect: Rect, free: Rect) => {
+    if (free.x === 0 || free.x + free.width === maxWidth) {
+      return {
+        x: free.x == 0 ? 0 : maxWidth - rect.width,
+        y: free.y,
+      }
+    }
+  })
+}
+
 export function compactBlockLayout(blocks: TextBlock[], maxWidth: number, debug: Debug): void {
+  freeRectLayout(blocks, maxWidth, debug, (rect: Rect, free: Rect) => free.pos)
+}
+
+function freeRectLayout(
+  blocks: TextBlock[],
+  maxWidth: number,
+  debug: Debug,
+  check: (rect: Rect, free: Rect) => Pos | null,
+): void {
   let y = 0
   const freeRects: Rect[] = [new Rect(0, 0, maxWidth, 100_000)]
   const allocRects: Rect[] = []
   sortBy(blocks, x => -x.rect.width * x.rect.height)
   for (const { rect } of blocks) {
-    let pos: Pos
+    rect.x = 0
+    rect.y = y
     for (const free of freeRects) {
       if (free.width >= rect.width) {
-        const newRect = new Rect(free.x, free.y, rect.width, rect.height)
-        if (!allocRects.some(r => r.overlaps(newRect))) {
-          pos = free.pos
-          break
+        const np = check(rect, free)
+        if (np) {
+          const newRect = new Rect(np.x, np.y, rect.width, rect.height)
+          if (!allocRects.some(r => r.overlaps(newRect))) {
+            rect.x = np.x
+            rect.y = np.y
+            break
+          }
         }
       }
     }
-    rect.x = pos?.x ?? 0
-    rect.y = pos?.y ?? y
     splitRectangles(freeRects, rect)
     sortRectsByPosition(freeRects)
     y = max(y, rect.y2 + 1)

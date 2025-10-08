@@ -1,11 +1,31 @@
 import { TextBlock } from './text-block'
 import { Debug } from './debug'
 import { simpleMonochrome } from './monochrome'
+import { FontDefinition } from "./fonts"
 
 export type ImageTransform = (ctx: CanvasRenderingContext2D) => void
 
+export class FontContext {
+  private activeFontSize: number = -1
+
+  constructor(
+    public readonly ctx: CanvasRenderingContext2D,
+    public readonly font: FontDefinition,
+    public readonly defaultFontSize: number,
+  ) {
+  }
+
+  set fontSize(size: number | undefined | null) {
+    const fontSize = this.font.size ?? size ?? this.defaultFontSize
+    if (this.activeFontSize !== fontSize) {
+      this.ctx.font = `${fontSize}px '${this.font.family}'`
+      this.activeFontSize = fontSize
+    }
+  }
+}
+
 export function draw(
-  ctx: CanvasRenderingContext2D,
+  fontCtx: FontContext,
   defaultHeight: number,
   blocks: TextBlock[],
   debug: Debug,
@@ -13,6 +33,7 @@ export function draw(
   preview: boolean,
   monochromeTransform: ImageTransform,
 ) {
+  const { ctx } = fontCtx
   let height = 0
   for (const block of blocks) {
     height = Math.max(height, block.rect.y2 + 1)
@@ -35,6 +56,7 @@ export function draw(
     ctx.textBaseline = 'top'
     ctx.fillStyle = 'black'
     for (const block of blocks) {
+      fontCtx.fontSize = block.format.fontSize
       const r = block.rect
       block.lines.forEach((line, j) => {
         const lineOffset = block.lineOffsets[j]

@@ -1,14 +1,13 @@
 import { createEffect, onMount, Show } from 'solid-js'
 import Select, { Option } from './Select'
-import { FontDefinition, fonts } from '../fonts'
+import { fonts } from '../fonts'
 import { blockLayouts } from '../layout'
 import { Config } from '../config'
 import TextEditor from './TextEditor'
 import { Debug } from '../debug'
-import { draw, resizeCanvas } from '../draw'
-import { TextBlock, TextBlockFormat } from '../text-block'
-import { clamp, debounce } from '../util'
-import { Rect } from '../rect'
+import { draw, FontContext, resizeCanvas } from '../draw'
+import { measureBlock, parseTextBlocks } from '../text-block'
+import { debounce } from '../util'
 import { monochromeThresholds } from '../monochrome'
 import { createProp } from '../util-prop'
 import { Printer } from '../ppa6-printer'
@@ -63,6 +62,7 @@ export default (props: { config: Config }) => {
     render(ctx, config.borders, config.preview, debug)
     metrics.set(debug.metrics)
     config.save()
+    location.hash = config.encode()
   }
 
   function blockSizeOptions(): Option<number>[] {
@@ -70,14 +70,12 @@ export default (props: { config: Config }) => {
   }
 
   function render(ctx: CanvasRenderingContext2D, borders: boolean, preview: boolean, debug: Debug) {
-    const font = config.font
     const blocks = parseTextBlocks(config.text)
+    const fontCtx = new FontContext(ctx, config.font, config.fontSize)
 
     debug.trackTime('measure_text', () => {
-      ctx.font = `${font.size ?? config.fontSize}px '${font.family}'` // font need to be configured to measure blocks
-      ctx.textBaseline = 'top'
       for (const block of blocks) {
-        measureBlock(ctx, block, font, config.padding.h, config.padding.v)
+        measureBlock(fontCtx, block, config.padding.h, config.padding.v)
       }
     })
 
@@ -86,7 +84,7 @@ export default (props: { config: Config }) => {
     )
 
     debug.trackTime('redraw', () =>
-      draw(ctx, CANVAS_HEIGHT, blocks, debug, borders, preview, ctx => {
+      draw(fontCtx, CANVAS_HEIGHT, blocks, debug, borders, preview, ctx => {
         const { method, blockSize } = config.monochrome
         method.apply(ctx, config.thresholdValue, blockSize)
       }),
@@ -213,71 +211,6 @@ export default (props: { config: Config }) => {
       </div>
     </>
   )
-}
-
-function parseTextBlocks(text: string): TextBlock[] {
-  type Annotation = TextBlockFormat & { repeat: number }
-
-  return text.trim()
-    .split(/\n{2,}/g)
-    .filter(v => v.trim() !== '')
-    .map(v => v.split('\n').map(v => v.trim()).filter(v => v !== ''))
-    .flatMap((lines: string[]): TextBlock[] => {
-      const [annotation, ok] = parseAnnotation(lines[0])
-      if (ok) {
-        lines.shift()
-      }
-      if (lines.length === 0) {
-        console.error('empty TextBlock - maybe annotation declared without text?')
-        return []
-      }
-      return Array.from<unknown, TextBlock>(Array(annotation.repeat),
-        () => new TextBlock(lines, annotation))
-    })
-
-  function parseAnnotation(line: string): [Annotation, boolean] {
-    const res: Annotation = { repeat: 1 }
-    if (!line.startsWith('# ')) {
-      return [res, false]
-    }
-    for (const arg of line.slice(2).split(/\s+/)) {
-      if (/^x\d+$/.test(arg)) {
-        res.repeat = clamp(1, 100, parseInt(arg.slice(1), 10))
-      } else if ('center' === arg) {
-        res.center = true
-      } else if ('shift' === arg) {
-        res.shift = true
-      } else {
-        console.error(`unknown TextBlock annotation property: '${arg}'`)
-      }
-    }
-    return [res, true]
-  }
-}
-
-function measureBlock(
-  ctx: CanvasRenderingContext2D,
-  block: TextBlock,
-  font: FontDefinition,
-  horizontalPadding: number,
-  verticalPadding: number,
-): void {
-  let width = 0
-  let height = 0
-  for (const [i, line] of block.lines.entries()) {
-    const m = ctx.measureText(line)
-    if (i > 0 && !font.lineHeight) {
-      height += Math.round(m.fontBoundingBoxDescent / 4)
-    }
-    const lineWidth = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight)
-    const lineHeight = font.lineHeight ?? Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)
-    block.lineOffsets.push({ x: m.actualBoundingBoxLeft, y: m.actualBoundingBoxAscent })
-    block.lineRects.push(new Rect(horizontalPadding, verticalPadding + height, lineWidth, lineHeight))
-    width = Math.max(width, lineWidth)
-    height += lineHeight
-  }
-  block.rect.width = width + 2 * horizontalPadding + 1
-  block.rect.height = height + 2 * verticalPadding + 1
 }
 
 function makeOptions<T extends { name: string }>(items: T[]): Option<T>[] {
