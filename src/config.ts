@@ -42,7 +42,7 @@ export interface Config extends ConfigStore {
   load(): void
   save(): void
   encode(): string;
-  decode(s: string): void;
+  decode(s: string): void
   setFont(font: FontDefinition): void
   setLayout(layout: BlockLayout): void
   setMonochromeMethod(method: MonochromeThreshold): void

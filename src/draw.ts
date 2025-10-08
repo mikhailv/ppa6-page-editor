@@ -56,19 +56,19 @@ export function draw(
     ctx.textBaseline = 'top'
     ctx.fillStyle = 'black'
     for (const block of blocks) {
-      fontCtx.fontSize = block.format.fontSize
-      const r = block.rect
-      block.lines.forEach((line, j) => {
-        const lineOffset = block.lineOffsets[j]
-        const lineRect = block.lineRects[j]
-        const shiftX = block.format.shift ? 0.5 : 0
-        const x = r.x + lineOffset.x + shiftX
-        const y = r.y + lineOffset.y + lineRect.y
-        if (block.format.center) {
-          ctx.fillText(line, x + Math.floor((block.rect.width - lineRect.width) / 2), y)
-        } else {
-          ctx.fillText(line, x + lineRect.x, y)
+      block.lines.forEach(line => {
+        const { format } = line
+        fontCtx.fontSize = format.fontSize
+        const shiftX = format.shift ? 0.5 : 0
+        const x = block.rect.x + line.offset.x + shiftX
+        const y = block.rect.y + line.offset.y + line.rect.y
+        let offsetX = line.rect.x
+        if (format.align === 'center') {
+          offsetX = line.rect.x + Math.floor((block.innerRect.width - line.rect.width) / 2)
+        } else if (format.align === 'right') {
+          offsetX = line.rect.x + block.innerRect.width - line.rect.width
         }
+        ctx.fillText(line.text, x + offsetX, y)
       })
     }
   })

@@ -2,51 +2,56 @@ import { Pos, Rect } from './rect'
 import { FontContext } from "./draw"
 import { clamp } from "./util"
 
-export interface TextBlockFormat {
-  center?: true
+export interface TextFormat {
+  align?: 'left' | 'center' | 'right'
   shift?: true
   fontSize?: number
+  repeat?: number
+}
+
+export class TextLine {
+  constructor(
+    public readonly text: string,
+    public readonly format: TextFormat,
+    public readonly offset: Pos = new Pos(0, 0),
+    public readonly rect: Rect = new Rect(0, 0, 0, 0),
+  ) {
+  }
+
+  copy(): TextLine {
+    return new TextLine(this.text, this.format, this.offset.copy(), this.rect.copy())
+  }
 }
 
 export class TextBlock {
-  readonly lines: string[]
-  readonly rect: Rect
-  readonly lineOffsets: Pos[]
-  readonly lineRects: Rect[]
-  readonly format: TextBlockFormat
+  constructor(
+    public readonly lines: TextLine[] = [],
+    public readonly rect: Rect = new Rect(0, 0, 0, 0),
+    public readonly innerRect: Rect = new Rect(0, 0, 0, 0)
+  ) {
+  }
 
-  constructor(lines: string[], format: TextBlockFormat) {
-    return {
-      lines,
-      rect: new Rect(0, 0, 0, 0),
-      lineOffsets: [],
-      lineRects: [],
-      format,
-    }
+  copy(): TextBlock {
+    return new TextBlock(this.lines.map(v => v.copy()), this.rect.copy(), this.innerRect.copy())
   }
 }
 
-type Annotation = TextBlockFormat & { repeat: number }
-
-function parseAnnotation(line: string): [Annotation, boolean] {
-  const res: Annotation = { repeat: 1 }
-  if (!line.startsWith('# ')) {
-    return [res, false]
-  }
+function parseTextFormat(line: string): TextFormat {
+  const res: TextFormat = {}
   for (const arg of line.slice(2).split(/\s+/)) {
     if (/^x\d+$/.test(arg)) {
       res.repeat = clamp(1, 100, parseInt(arg.slice(1), 10))
-    } else if ('center' === arg) {
-      res.center = true
+    } else if ('left' === arg || 'center' === arg || 'right' === arg) {
+      res.align = arg
     } else if ('shift' === arg) {
       res.shift = true
     } else if (/^fs:\d+$/.test(arg)) {
       res.fontSize = Number(arg.substring(3))
     } else {
-      console.error(`unknown TextBlock annotation property: '${arg}'`)
+      console.error(`unknown TextFormat annotation property: '${arg}'`)
     }
   }
-  return [res, true]
+  return res
 }
 
 export function parseTextBlocks(text: string): TextBlock[] {
@@ -55,16 +60,28 @@ export function parseTextBlocks(text: string): TextBlock[] {
     .filter(v => v.trim() !== '')
     .map(v => v.split('\n').map(v => v.trim()).filter(v => v !== ''))
     .flatMap((lines: string[]): TextBlock[] => {
-      const [annotation, ok] = parseAnnotation(lines[0])
-      if (ok) {
-        lines.shift()
+      const block = new TextBlock()
+      const format: TextFormat = {}
+      for (let line of lines) {
+        if (line.startsWith('#')) {
+          if (line.startsWith('##')) {
+            line = line.substring(1)
+          } else {
+            Object.assign(format, parseTextFormat(line))
+            continue
+          }
+        }
+        block.lines.push(new TextLine(line, Object.assign({}, format)))
       }
-      if (lines.length === 0) {
+      if (block.lines.length === 0) {
         console.error('empty TextBlock - maybe annotation declared without text?')
         return []
       }
-      return Array.from<unknown, TextBlock>(Array(annotation.repeat),
-        () => new TextBlock(lines, annotation))
+      const repeat = block.lines[0].format.repeat ?? 1
+      if (repeat === 1) {
+        return [block]
+      }
+      return Array.from<unknown, TextBlock>(Array(repeat), () => block.copy())
     })
 }
 
@@ -74,18 +91,18 @@ export function measureBlock(fontCtx: FontContext, block: TextBlock, hPadding: n
   let width = 0
   let height = 0
   for (const [i, line] of block.lines.entries()) {
-    fontCtx.fontSize = block.format.fontSize
-    const m = ctx.measureText(line)
+    fontCtx.fontSize = line.format.fontSize
+    const m = ctx.measureText(line.text)
     if (i > 0 && !font.lineHeight) {
       height += Math.round(m.fontBoundingBoxDescent / 4)
     }
     const lineWidth = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight)
     const lineHeight = font.lineHeight ?? Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)
-    block.lineOffsets.push({ x: m.actualBoundingBoxLeft, y: m.actualBoundingBoxAscent })
-    block.lineRects.push(new Rect(hPadding, vPadding + height, lineWidth, lineHeight))
+    line.offset.set(m.actualBoundingBoxLeft, m.actualBoundingBoxAscent)
+    line.rect.set(hPadding, vPadding + height, lineWidth, lineHeight)
     width = Math.max(width, lineWidth)
     height += lineHeight
   }
-  block.rect.width = width + 2 * hPadding + 1
-  block.rect.height = height + 2 * vPadding + 1
+  block.rect.set(0, 0, width + 2 * hPadding + 1, height + 2 * vPadding + 1)
+  block.innerRect.set(hPadding, vPadding, width, height)
 }

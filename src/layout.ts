@@ -28,10 +28,7 @@ export function verticalBlockLayout(blocks: TextBlock[]): void {
 export function twoColumnsBlockLayout(blocks: TextBlock[], maxWidth: number, debug: Debug): void {
   freeRectLayout(blocks, maxWidth, debug, (rect: Rect, free: Rect) => {
     if (free.x === 0 || free.x + free.width === maxWidth) {
-      return {
-        x: free.x == 0 ? 0 : maxWidth - rect.width,
-        y: free.y,
-      }
+      return new Pos(free.x == 0 ? 0 : maxWidth - rect.width, free.y)
     }
   })
 }
@@ -44,7 +41,7 @@ function freeRectLayout(
   blocks: TextBlock[],
   maxWidth: number,
   debug: Debug,
-  check: (rect: Rect, free: Rect) => Pos | null,
+  check: (rect: Rect, free: Rect) => Pos | undefined,
 ): void {
   let y = 0
   const freeRects: Rect[] = [new Rect(0, 0, maxWidth, 100_000)]

@@ -1,8 +1,20 @@
 const { min, max } = Math
 
-export interface Pos {
-  x: number
-  y: number
+export class Pos {
+  constructor(
+    public x: number,
+    public y: number,
+  ) {
+  }
+
+  set(x: number, y: number) {
+    this.x = x
+    this.y = y
+  }
+
+  copy(): Pos {
+    return new Pos(this.x, this.y)
+  }
 }
 
 export class Rect {
@@ -15,11 +27,11 @@ export class Rect {
   }
 
   get pos(): Pos {
-    return { x: this.x, y: this.y }
+    return new Pos(this.x, this.y)
   }
 
   get pos2(): Pos {
-    return { x: this.x2, y: this.y2 }
+    return new Pos(this.x2, this.y2)
   }
 
   get x2(): number {
@@ -28,6 +40,13 @@ export class Rect {
 
   get y2(): number {
     return this.y + this.height - 1
+  }
+
+  set(x: number, y: number, width: number, height: number) {
+    this.x = x
+    this.y = y
+    this.width = width
+    this.height = height
   }
 
   squire(): boolean {
@@ -56,5 +75,9 @@ export class Rect {
   overlaps(other: Rect): boolean {
     return max(this.x, other.x) < min(this.x2, other.x2)
       && max(this.y, other.y) < min(this.y2, other.y2)
+  }
+
+  copy(): Rect {
+    return new Rect(this.x, this.y, this.width, this.height)
   }
 }

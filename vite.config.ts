@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { defineConfig } from 'vite'
+import solidPlugin from 'vite-plugin-solid'
 import eslintPlugin from 'vite-plugin-eslint'
 
 export default defineConfig({
@@ -12,4 +12,4 @@ export default defineConfig({
     target: 'esnext',
     assetsInlineLimit: 128 << 10,
   },
-});
+})
