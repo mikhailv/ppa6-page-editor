@@ -94,7 +94,7 @@ export function draw(
       ctx.setLineDash([1, 7])
       for (const block of blocks) {
         const r = block.rect
-        ctx.strokeRect(r.x - 0.5, r.y - 0.5, r.width, r.height)
+        ctx.strokeRect(r.x - 0.5, r.y - 0.5, r.width + (r.x + r.width === ctx.canvas.width ? 1 : 0), r.height)
       }
     })
     if (preview) {
