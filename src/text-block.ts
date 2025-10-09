@@ -1,5 +1,5 @@
 import { Pos, Rect } from './rect'
-import { FontContext } from "./draw"
+import { DrawContext } from "./draw"
 import { clamp } from "./util"
 
 export interface TextFormat {
@@ -92,13 +92,13 @@ export function parseTextBlocks(text: string): TextBlock[] {
     })
 }
 
-export function measureBlock(fontCtx: FontContext, block: TextBlock, hPadding: number, vPadding: number): void {
-  const { ctx, font } = fontCtx
+export function measureBlock(drawCtx: DrawContext, block: TextBlock, hPadding: number, vPadding: number): void {
+  const { ctx, font } = drawCtx
   ctx.textBaseline = 'top'
   let width = 0
   let height = 0
   for (const [i, line] of block.lines.entries()) {
-    fontCtx.fontSize = line.format.fontSize
+    drawCtx.fontSize = line.format.fontSize
     const m = ctx.measureText(line.text)
     if (i > 0 && !font.lineHeight) {
       height += Math.round(m.fontBoundingBoxDescent / 4)

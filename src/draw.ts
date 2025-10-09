@@ -2,11 +2,13 @@ import { TextBlock } from './text-block'
 import { Debug } from './debug'
 import { simpleMonochrome } from './monochrome'
 import { FontDefinition } from "./fonts"
+import { PRINTER_PAPER_WIDTH } from "./constants"
 
 export type ImageTransform = (ctx: CanvasRenderingContext2D) => void
 
-export class FontContext {
-  private activeFontSize: number = -1
+export class DrawContext {
+  private _fontSize: number = -1
+  private _realSizeScale: boolean
 
   constructor(
     public readonly ctx: CanvasRenderingContext2D,
@@ -17,15 +19,47 @@ export class FontContext {
 
   set fontSize(size: number | undefined | null) {
     const fontSize = this.font.size ?? size ?? this.defaultFontSize
-    if (this.activeFontSize !== fontSize) {
+    if (this._fontSize !== fontSize) {
       this.ctx.font = `${fontSize}px '${this.font.family}'`
-      this.activeFontSize = fontSize
+      this._fontSize = fontSize
+    }
+  }
+
+  set realSizeScale(val: boolean) {
+    if (this._realSizeScale !== val) {
+      this._realSizeScale = val
+      this.updateCanvasStyles()
+    }
+  }
+
+  resize(width: number, height: number): boolean {
+    const { ctx } = this
+    if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
+      const oldFont = ctx.font
+      ctx.canvas.width = width
+      ctx.canvas.height = height
+      this.updateCanvasStyles()
+      ctx.font = oldFont
+      return true
+    }
+    return false
+  }
+
+  private updateCanvasStyles() {
+    const { ctx } = this
+    const { width, height } = ctx.canvas
+    if (this._realSizeScale) {
+      ctx.canvas.style.width = PRINTER_PAPER_WIDTH
+      ctx.canvas.style.height = Math.floor(ctx.canvas.getBoundingClientRect().width / width * height) + 'px'
+    } else {
+      ctx.canvas.style.width = width + 'px'
+      ctx.canvas.style.height = height + 'px'
     }
   }
 }
 
 export function draw(
-  fontCtx: FontContext,
+  drawCtx: DrawContext,
   defaultHeight: number,
   blocks: TextBlock[],
   debug: Debug,
@@ -33,7 +67,7 @@ export function draw(
   preview: boolean,
   monochromeTransform: ImageTransform,
 ) {
-  const { ctx } = fontCtx
+  const { ctx } = drawCtx
   let height = 0
   for (const block of blocks) {
     height = Math.max(height, block.rect.y2 + 1)
@@ -58,7 +92,7 @@ export function draw(
     for (const block of blocks) {
       block.lines.forEach(line => {
         const { format } = line
-        fontCtx.fontSize = format.fontSize
+        drawCtx.fontSize = format.fontSize
         const shiftX = format.shift ? 0.5 : 0
         const x = block.rect.x + line.offset.x + shiftX
         const y = block.rect.y + line.offset.y + line.rect.y
@@ -105,19 +139,6 @@ export function draw(
   }
 
   function resizeHeight(height: number) {
-    resizeCanvas(ctx, ctx.canvas.width, height)
+    drawCtx.resize(ctx.canvas.width, height)
   }
-}
-
-export function resizeCanvas(ctx: CanvasRenderingContext2D, width: number, height: number): boolean {
-  if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
-    const oldFont = ctx.font
-    ctx.canvas.width = width
-    ctx.canvas.height = height
-    ctx.canvas.style.width = width + 'px'
-    ctx.canvas.style.height = height + 'px'
-    ctx.font = oldFont
-    return true
-  }
-  return false
 }

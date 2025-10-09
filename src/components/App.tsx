@@ -1,19 +1,20 @@
-import { createEffect, onMount, Show } from 'solid-js'
+import { createEffect, createSignal, onMount, Show } from 'solid-js'
 import Select, { Option } from './Select'
 import { fonts } from '../fonts'
 import { blockLayouts } from '../layout'
 import { Config } from '../config'
 import TextEditor from './TextEditor'
 import { Debug } from '../debug'
-import { draw, FontContext, resizeCanvas } from '../draw'
+import { draw, DrawContext } from '../draw'
 import { measureBlock, parseTextBlocks } from '../text-block'
 import { debounce } from '../util'
 import { monochromeThresholds } from '../monochrome'
 import { createProp } from '../util-prop'
 import { Printer } from '../ppa6-printer'
 import { detectBootstrapBreakpoint } from '../util-bs'
+import { PRINTER_PIXELS_WIDTH } from "../constants"
 
-const CANVAS_WIDTH = 384
+const CANVAS_WIDTH = PRINTER_PIXELS_WIDTH
 const CANVAS_HEIGHT = 400
 const DEBOUNCE_MS = 200
 const DEBUG = new URLSearchParams(location.search).has('debug')
@@ -28,6 +29,7 @@ export default (props: { config: Config }) => {
 
   const metrics = createProp<string[]>([])
   const bsBreakpoint = createProp<string>('')
+  const [realSizeScale, setRealSizeScale] = createSignal(false)
 
   const fontOptions = makeOptions(fonts)
   const blockLayoutsOptions = makeOptions(blockLayouts)
@@ -43,7 +45,7 @@ export default (props: { config: Config }) => {
 
   onMount(() => {
     ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true })
-    resizeCanvas(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)
+    new DrawContext(ctx, config.font, config.fontSize).resize(CANVAS_WIDTH, CANVAS_HEIGHT)
     update()
   })
 
@@ -52,14 +54,17 @@ export default (props: { config: Config }) => {
   async function connectAndPrint() {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
-    resizeCanvas(ctx, CANVAS_WIDTH, 1)
-    render(ctx, config.borders, true, new Debug(false))
+    const drawCtx = new DrawContext(ctx, config.font, config.fontSize)
+    drawCtx.resize(CANVAS_WIDTH, 1)
+    render(drawCtx, config.borders, true, new Debug(false))
     await printer.printImage(ctx.getImageData(0, 0, canvas.width, canvas.height))
   }
 
   function update() {
     const debug = new Debug(config.debug && !config.preview)
-    render(ctx, config.borders, config.preview, debug)
+    const drawCtx = new DrawContext(ctx, config.font, config.fontSize)
+    drawCtx.realSizeScale = realSizeScale()
+    render(drawCtx, config.borders, config.preview, debug)
     metrics.set(debug.metrics)
     config.save()
     location.hash = config.encode()
@@ -69,13 +74,12 @@ export default (props: { config: Config }) => {
     return config.monochrome.method.blockSizes?.map(size => ({ key: String(size), value: size })) ?? []
   }
 
-  function render(ctx: CanvasRenderingContext2D, borders: boolean, preview: boolean, debug: Debug) {
+  function render(drawCtx: DrawContext, borders: boolean, preview: boolean, debug: Debug) {
     const blocks = parseTextBlocks(config.text)
-    const fontCtx = new FontContext(ctx, config.font, config.fontSize)
 
     debug.trackTime('measure_text', () => {
       for (const block of blocks) {
-        measureBlock(fontCtx, block, config.padding.h, config.padding.v)
+        measureBlock(drawCtx, block, config.padding.h, config.padding.v)
       }
       if (config.fixedWidth) {
         const maxWidth = Math.max(...blocks.map(b => b.rect.width))
@@ -88,7 +92,7 @@ export default (props: { config: Config }) => {
     )
 
     debug.trackTime('redraw', () =>
-      draw(fontCtx, CANVAS_HEIGHT, blocks, debug, borders, preview, ctx => {
+      draw(drawCtx, CANVAS_HEIGHT, blocks, debug, borders, preview, ctx => {
         const { method, blockSize } = config.monochrome
         method.apply(ctx, config.thresholdValue, blockSize)
       }),
@@ -156,6 +160,14 @@ export default (props: { config: Config }) => {
                      checked={config.preview}
                      onInput={e => config.preview = e.currentTarget.checked}/>
               <label for="preview-checkbox" class="form-check-label font-sm">Preview</label>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="form-check">
+              <input id="real-size-checkbox" type="checkbox" class="form-check-input"
+                     checked={realSizeScale()}
+                     onInput={e => setRealSizeScale(e.currentTarget.checked)}/>
+              <label for="real-size-checkbox" class="form-check-label font-sm">Scale to real size</label>
             </div>
           </div>
           <div class="col-auto">
