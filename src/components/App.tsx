@@ -56,7 +56,7 @@ export default (props: { config: Config }) => {
     const ctx = canvas.getContext('2d')
     const drawCtx = new DrawContext(ctx, config.font, config.fontSize)
     drawCtx.resize(CANVAS_WIDTH, 1)
-    render(drawCtx, config.borders, true, new Debug(false))
+    render(drawCtx, true, new Debug(false))
     await printer.printImage(ctx.getImageData(0, 0, canvas.width, canvas.height))
   }
 
@@ -64,7 +64,7 @@ export default (props: { config: Config }) => {
     const debug = new Debug(config.debug && !config.preview)
     const drawCtx = new DrawContext(ctx, config.font, config.fontSize)
     drawCtx.realSizeScale = realSizeScale()
-    render(drawCtx, config.borders, config.preview, debug)
+    render(drawCtx, config.preview, debug)
     metrics.set(debug.metrics)
     config.save()
     location.hash = config.encode()
@@ -74,7 +74,7 @@ export default (props: { config: Config }) => {
     return config.monochrome.method.blockSizes?.map(size => ({ key: String(size), value: size })) ?? []
   }
 
-  function render(drawCtx: DrawContext, borders: boolean, preview: boolean, debug: Debug) {
+  function render(drawCtx: DrawContext, preview: boolean, debug: Debug) {
     const blocks = parseTextBlocks(config.text)
 
     debug.trackTime('measure_text', () => {
@@ -85,6 +85,10 @@ export default (props: { config: Config }) => {
         const maxWidth = Math.max(...blocks.map(b => b.rect.width))
         blocks.forEach(block => block.setWidth(maxWidth))
       }
+      if (config.fixedHeight) {
+        const maxHeight = Math.max(...blocks.map(b => b.rect.height))
+        blocks.forEach(block => block.setHeight(maxHeight))
+      }
     })
 
     debug.trackTime('layout', () =>
@@ -92,7 +96,7 @@ export default (props: { config: Config }) => {
     )
 
     debug.trackTime('redraw', () =>
-      draw(drawCtx, CANVAS_HEIGHT, blocks, debug, borders, preview, ctx => {
+      draw(drawCtx, CANVAS_HEIGHT, blocks, debug, config.borders, preview, config.negative, ctx => {
         const { method, blockSize } = config.monochrome
         method.apply(ctx, config.thresholdValue, blockSize)
       }),
@@ -148,10 +152,26 @@ export default (props: { config: Config }) => {
           </div>
           <div class="col-auto">
             <div class="form-check form-check-sm">
+              <input id="fixed-height-checkbox" type="checkbox" class="form-check-input"
+                     checked={config.fixedHeight}
+                     onInput={e => config.fixedHeight = e.currentTarget.checked}/>
+              <label for="fixed-height-checkbox" class="form-check-label font-sm">Fixed height</label>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="form-check form-check-sm">
               <input id="borders-checkbox" type="checkbox" class="form-check-input"
                      checked={config.borders}
                      onInput={e => config.borders = e.currentTarget.checked}/>
               <label for="borders-checkbox" class="form-check-label font-sm">Borders</label>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="form-check form-check-sm">
+              <input id="negative-checkbox" type="checkbox" class="form-check-input"
+                     checked={config.negative}
+                     onInput={e => config.negative = e.currentTarget.checked}/>
+              <label for="negative-checkbox" class="form-check-label font-sm">Negative</label>
             </div>
           </div>
           <div class="col-auto">

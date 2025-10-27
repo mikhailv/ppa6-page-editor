@@ -65,6 +65,7 @@ export function draw(
   debug: Debug,
   borders: boolean,
   preview: boolean,
+  negative: boolean,
   monochromeTransform: ImageTransform,
 ) {
   const { ctx } = drawCtx
@@ -88,8 +89,10 @@ export function draw(
 
   debug.trackTime('draw_text', () => {
     ctx.textBaseline = 'top'
-    ctx.fillStyle = 'black'
     for (const block of blocks) {
+      ctx.fillStyle = negative ? 'black' : 'white'
+      ctx.fillRect(block.rect.x, block.rect.y, block.rect.width, block.rect.height)
+      ctx.fillStyle = negative ? 'white' : 'black'
       block.lines.forEach(line => {
         const { format } = line
         drawCtx.fontSize = format.fontSize
@@ -123,8 +126,7 @@ export function draw(
 
   if (borders) {
     debug.trackTime('draw_borders', () => {
-      ctx.fillStyle = 'black'
-      ctx.strokeStyle = 'black'
+      ctx.strokeStyle = negative ? 'white' : 'black'
       ctx.setLineDash([1, 7])
       for (const block of blocks) {
         const r = block.rect
@@ -133,7 +135,7 @@ export function draw(
     })
     if (preview) {
       debug.trackTime('monochrome', () =>
-        simpleMonochrome(ctx, 128)
+        simpleMonochrome(ctx, negative ? 110 : 150)
       )
     }
   }

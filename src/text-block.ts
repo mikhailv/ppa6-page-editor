@@ -41,6 +41,13 @@ export class TextBlock {
     this.innerRect.x += dx
     this.rect.width = width
   }
+
+  setHeight(height: number) {
+    const dy = Math.floor((height - this.rect.height) / 2)
+    this.lines.forEach(line => line.rect.y += dy)
+    this.innerRect.y += dy
+    this.rect.height = height
+  }
 }
 
 function parseTextFormat(line: string): TextFormat {
