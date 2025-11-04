@@ -2,17 +2,21 @@ import { Pos, Rect } from './rect'
 import { DrawContext } from "./draw"
 import { clamp } from "./util"
 
-export interface TextFormat {
+export interface TextBlockFormat {
+  repeat?: number
+  negative?: true
+}
+
+export interface TextLineFormat {
   align?: 'left' | 'center' | 'right'
   shift?: true
   fontSize?: number
-  repeat?: number
 }
 
 export class TextLine {
   constructor(
     public readonly text: string,
-    public readonly format: TextFormat,
+    public readonly format: TextLineFormat,
     public readonly offset: Pos = new Pos(0, 0),
     public readonly rect: Rect = new Rect(0, 0, 0, 0),
   ) {
@@ -27,12 +31,13 @@ export class TextBlock {
   constructor(
     public readonly lines: TextLine[] = [],
     public readonly rect: Rect = new Rect(0, 0, 0, 0),
-    public readonly innerRect: Rect = new Rect(0, 0, 0, 0)
+    public readonly innerRect: Rect = new Rect(0, 0, 0, 0),
+    public readonly format: TextBlockFormat = {}
   ) {
   }
 
   copy(): TextBlock {
-    return new TextBlock(this.lines.map(v => v.copy()), this.rect.copy(), this.innerRect.copy())
+    return new TextBlock(this.lines.map(v => v.copy()), this.rect.copy(), this.innerRect.copy(), this.format)
   }
 
   setWidth(width: number) {
@@ -50,19 +55,27 @@ export class TextBlock {
   }
 }
 
-function parseTextFormat(line: string): TextFormat {
-  const res: TextFormat = {}
+function parseTextFormat(line: string, block?: TextBlockFormat): TextLineFormat {
+  const res: TextLineFormat = {}
   for (const arg of line.slice(2).split(/\s+/)) {
-    if (/^x\d+$/.test(arg)) {
-      res.repeat = clamp(1, 100, parseInt(arg.slice(1), 10))
-    } else if ('left' === arg || 'center' === arg || 'right' === arg) {
+    if (block) {
+      if (/^x\d+$/.test(arg)) {
+        block.repeat = clamp(1, 100, parseInt(arg.slice(1), 10))
+        continue
+      }
+      if ('neg' === arg) {
+        block.negative = true
+        continue
+      }
+    }
+    if ('left' === arg || 'center' === arg || 'right' === arg) {
       res.align = arg
     } else if ('shift' === arg) {
       res.shift = true
     } else if (/^fs:\d+$/.test(arg)) {
       res.fontSize = Number(arg.substring(3))
     } else {
-      console.error(`unknown TextFormat annotation property: '${arg}'`)
+      console.error(`unknown text format annotation property: '${arg}'`)
     }
   }
   return res
@@ -75,13 +88,15 @@ export function parseTextBlocks(text: string): TextBlock[] {
     .map(v => v.split('\n').map(v => v.trim()).filter(v => v !== ''))
     .flatMap((lines: string[]): TextBlock[] => {
       const block = new TextBlock()
-      const format: TextFormat = {}
+      const format: TextLineFormat = {}
+      let firstFormatLine = true
       for (let line of lines) {
         if (line.startsWith('#')) {
           if (line.startsWith('##')) {
             line = line.substring(1)
           } else {
-            Object.assign(format, parseTextFormat(line))
+            Object.assign(format, parseTextFormat(line, firstFormatLine ? block.format : undefined))
+            firstFormatLine = false
             continue
           }
         }
@@ -91,7 +106,7 @@ export function parseTextBlocks(text: string): TextBlock[] {
         console.error('empty TextBlock - maybe annotation declared without text?')
         return []
       }
-      const repeat = block.lines[0].format.repeat ?? 1
+      const repeat = block.format.repeat ?? 1
       if (repeat === 1) {
         return [block]
       }

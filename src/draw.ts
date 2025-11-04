@@ -90,9 +90,10 @@ export function draw(
   debug.trackTime('draw_text', () => {
     ctx.textBaseline = 'top'
     for (const block of blocks) {
-      ctx.fillStyle = negative ? 'black' : 'white'
+      const blockNegative = combineNegative(negative, block.format.negative)
+      ctx.fillStyle = blockNegative ? 'black' : 'white'
       ctx.fillRect(block.rect.x, block.rect.y, block.rect.width, block.rect.height)
-      ctx.fillStyle = negative ? 'white' : 'black'
+      ctx.fillStyle = blockNegative ? 'white' : 'black'
       block.lines.forEach(line => {
         const { format } = line
         drawCtx.fontSize = format.fontSize
@@ -143,4 +144,8 @@ export function draw(
   function resizeHeight(height: number) {
     drawCtx.resize(ctx.canvas.width, height)
   }
+}
+
+function combineNegative(negative: boolean, v?: true): boolean {
+  return v === true ? !negative : negative
 }
